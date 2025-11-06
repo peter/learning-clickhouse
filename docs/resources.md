@@ -1,6 +1,7 @@
 # ClickHouse Resources
 
 * [ClickHouse Website](https://clickhouse.com/)
+* [ClickHouse on Wikipedia](https://en.wikipedia.org/wiki/ClickHouse)
 * [ClickHouse Documentation](https://clickhouse.com/docs)
 * [ClickHouse Cloud](https://console.clickhouse.cloud)
 * [ClickHouse Certified Developer](https://clickhouse.com/learn/certification)
