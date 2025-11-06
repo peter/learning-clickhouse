@@ -8,6 +8,8 @@
 * [Real-time analytics with ClickHouse (Training)](https://clickhouse.com/learn/real-time-analytics)
 * [Altinity ClickHouse Training](https://altinity.com/clickhouse-training/)
 
+* [Projections](https://clickhouse.com/docs/sql-reference/statements/alter/projection)
+
 Altinity ClickHouse Training:
 
 * [Altinity Analyst Training for ClickHouse® - Session 1](https://www.youtube.com/watch?v=k3qCIlVQVyY)
