@@ -8,6 +8,9 @@ ClickHouse is open source and is easy to install and run on your laptop or serve
 ```sh
 # Starting the clickhouse server:
 clickhouse server
+# Ports:
+# 9000  # Native protocol (TCP) - default for clickhouse-client
+# 8123  # HTTP interface - for HTTP queries and integrations
 
 # Connecting to the server (on port 9000)
 clickhouse client
