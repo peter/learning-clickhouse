@@ -1,4 +1,4 @@
-# ClickHouse Learning
+# Learning ClickHouse
 
 A collection of resources for learning about ClickHouse.
 
