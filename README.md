@@ -4,7 +4,9 @@ A collection of resources for learning about ClickHouse.
 
 ## What is ClickHouse?
 
-ClickHouse is a highly performant Open Source analytics (OLAP) database.
+[ClickHouse](https://clickhouse.com) is a highly performant Open Source analytics (OLAP) database. From Wikipedia:
+
+"ClickHouse is an open-source column-oriented DBMS (columnar database management system) for online analytical processing (OLAP) that allows users to generate analytical reports using SQL queries in real-time. ClickHouse Inc. is headquartered in the San Francisco Bay Area with the subsidiary, ClickHouse B.V., based in Amsterdam, Netherlands."
 
 ## Table of Contents
 
