@@ -7,7 +7,8 @@ ClickHouse is open source and is easy to install and run on your laptop or serve
 
 ```sh
 # Starting the clickhouse server:
-clickhouse server
+# The server process will save files in the current directory by default
+mkdir -p ~/clickhouse-server && cd ~/clickhouse-server && clickhouse server
 # Ports:
 # 9000  # Native protocol (TCP) - default for clickhouse-client
 # 8123  # HTTP interface - for HTTP queries and integrations
@@ -40,4 +41,11 @@ SELECT * FROM my_table ORDER BY timestamp;
 
 DESCRIBE TABLE my_table;
 SHOW CREATE TABLE my_table;
+```
+
+You can inspect the files the server creates:
+
+```sh
+du -sh ~/clickhouse-server
+find clickhouse-server -type f
 ```

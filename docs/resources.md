@@ -8,6 +8,10 @@
 * [Real-time analytics with ClickHouse (Training)](https://clickhouse.com/learn/real-time-analytics)
 * [Altinity ClickHouse Training](https://altinity.com/clickhouse-training/)
 
+* [Tutorials and example datasets](https://clickhouse.com/docs/getting-started/example-datasets)
+* [ClickPy - Analytics for PyPI packages](https://clickpy.clickhouse.com/)
+
+* [ClickHouse Functions](https://clickhouse.com/docs/sql-reference/functions)
 * [Projections](https://clickhouse.com/docs/sql-reference/statements/alter/projection)
 
 Altinity ClickHouse Training:
