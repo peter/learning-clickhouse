@@ -1,6 +1,8 @@
 # ClickHouse Resources
 
 * [ClickHouse Website](https://clickhouse.com/)
+* [ClickHouse Getting Started](https://clickhouse.com/docs/get-started/quick-start)
+* [ClickHouse CLI](https://clickhouse.com/docs/interfaces/cli)
 * [ClickHouse on Wikipedia](https://en.wikipedia.org/wiki/ClickHouse)
 * [ClickHouse Documentation](https://clickhouse.com/docs)
 * [ClickHouse Cloud](https://console.clickhouse.cloud)

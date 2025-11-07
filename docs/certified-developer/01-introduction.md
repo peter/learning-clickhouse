@@ -182,13 +182,131 @@ SELECT
     total_bytes_uncompressed/total_bytes as compression_ratio
 FROM system.tables
 WHERE name = 'uk_price_paid';
+--    ┌─formatReadab⋯otal_bytes)─┬─formatReadab⋯compressed)─┬─compression_ratio─┐
+-- 1. │ 193.23 MiB               │ 709.94 MiB               │ 3.674015729339304 │
+--    └──────────────────────────┴──────────────────────────┴───────────────────┘
+-- Compare to 4 GB CSV size
+```
+
+Visualizations (Charts) are available in the ClickHouse console and you can also create Dashboards there. Example query using the [bar function](https://clickhouse.com/docs/sql-reference/functions/other-functions#bar):
+
+```sql
+SELECT  toYear(date) as year,
+        round(avg(price)) as price,
+        bar(price, 0, 1000000, 80)
+FROM uk.uk_price_paid
+GROUP BY year
+ORDER BY year
+-- 31 rows in set. Elapsed: 0.057 sec. Processed 30.63 million rows, 183.78 MB (535.83 million rows/s., 3.21 GB/s.)
+
+SELECT town,
+       district,
+       round(avg(price)) as price
+FROM uk.uk_price_paid
+WHERE date >= '2020-01-01'
+GROUP BY town,
+         district
+ORDER BY price DESC
+LIMIT 20
+-- 20 rows in set. Elapsed: 0.074 sec. Processed 30.63 million rows, 245.48 MB (413.72 million rows/s., 3.32 GB/s.)
 ```
 
 ## Lab 1.1 Starting a ClickHouse Cloud Service
 
+1. Go to http://clickhouse.cloud(opens in a new tab) and log in. If you do not have a ClickHouse account yet, create one.
+2. If this is your first time logging into ClickHouse Cloud, you will automatically start an "onboarding" process that walks you through creating a new service.
+3. Enter a service name of your choice and pick a cloud provider and region – it doesn’t matter which you choose for the labs - then. click the Create Service button. This will start provisioning a new service. The provisioning can take several minutes.
+
 ## Lab 1.2: Define and Populate a Table
 
+The UK property prices are in a CSV file at:
+'https://learn-clickhouse.s3.us-east-2.amazonaws.com/uk_property_prices/uk_prices.csv.zst'(opens in a new tab).
+Run a query that selects 1000 rows from the file using the s3 table function.
+
+The CSV file has a header row. Notice the s3 table function used that header row to determine column names. It also reads thousands of rows to infer a schema. View the inferred schema using DESC:
+
+```sql
+DESC s3('https://learn-clickhouse.s3.us-east-2.amazonaws.com/uk_property_prices/uk_prices.csv.zst');
+```
+
+```sql
+CREATE OR REPLACE TABLE uk_prices_temp 
+ENGINE = Memory
+AS 
+    SELECT * 
+    FROM s3('https://learn-clickhouse.s3.us-east-2.amazonaws.com/uk_property_prices/uk_prices.csv.zst')
+    LIMIT 100;
+
+SHOW CREATE TABLE uk_prices_temp;
+-- CREATE TABLE default.uk_prices_temp
+-- (
+--     `id` Nullable(String),
+--     `price` Nullable(String),
+--     `date` Nullable(DateTime),
+--     `postcode` Nullable(String),
+--     `type` Nullable(String),
+--     `is_new` Nullable(String),
+--     `duration` Nullable(String),
+--     `addr1` Nullable(String),
+--     `addr2` Nullable(String),
+--     `street` Nullable(String),
+--     `locality` Nullable(String),
+--     `town` Nullable(String),
+--     `district` Nullable(String),
+--     `county` Nullable(String),
+--     `column15` Nullable(String),
+--     `column16` Nullable(String)
+-- )
+-- ENGINE = Memory
+```
+
+```sql
+CREATE TABLE uk_prices_1
+(
+    `id` Nullable(String),
+    `price` Nullable(String),
+    `date` DateTime,
+    `postcode` Nullable(String),
+    `type` Nullable(String),
+    `is_new` Nullable(String),
+    `duration` Nullable(String),
+    `addr1` Nullable(String),
+    `addr2` Nullable(String),
+    `street` Nullable(String),
+    `locality` Nullable(String),
+    `town` Nullable(String),
+    `district` Nullable(String),
+    `county` Nullable(String),
+    `column15` Nullable(String),
+    `column16` Nullable(String)
+)
+ENGINE = MergeTree
+PRIMARY KEY date;
+
+INSERT INTO uk_prices_1
+    SELECT * 
+    FROM s3('https://learn-clickhouse.s3.us-east-2.amazonaws.com/uk_property_prices/uk_prices.csv.zst');
+
+select count(*) from uk_prices_1;
+-- 30,033,199
+
+SELECT avg(toUInt32(price))
+FROM uk_prices_1;
+
+SELECT avg(toUInt32(price))
+FROM uk_prices_1
+WHERE toYear(date) >= '2020';
+
+SELECT avg(toUInt32(price))
+FROM uk_prices_1
+WHERE town = 'LONDON';
+```
+
+A .zst file is a file compressed using Zstandard (also called zstd), a fast compression algorithm developed by Facebook/Meta. You can install it on Mac with `brew install zstd` and use it with `zstd -d file.zst`
+
 ## Lab 1.3 Using the ClickHouse Command-Line Client
+
+See [ClickHouse CLI Documentation](https://clickhouse.com/docs/interfaces/cli)
 
 ## Lab Solutions
 
