@@ -15,6 +15,13 @@
 * [Tutorials and example datasets](https://clickhouse.com/docs/getting-started/example-datasets)
 * [ClickPy - Analytics for PyPI packages](https://clickpy.clickhouse.com/)
 
+ClickHouse Cloud:
+
+* [ClickHouse Cloud Query API Endpoints](https://clickhouse.com/docs/cloud/get-started/query-endpoints)
+* [ClickHouse Cloud REST API](https://clickhouse.com/docs/cloud/manage/api/api-overview)  - [OpenAPI Docs](https://clickhouse.com/docs/cloud/manage/api/swagger)
+
+* [ClickHouse Table Engines](https://clickhouse.com/docs/engines/table-engines)
+* [MergeTree Table Engine Family](https://clickhouse.com/docs/engines/table-engines/mergetree-family/mergetree)
 * [ClickHouse Functions](https://clickhouse.com/docs/sql-reference/functions)
 * [Projections](https://clickhouse.com/docs/sql-reference/statements/alter/projection)
 
