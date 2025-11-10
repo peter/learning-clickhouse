@@ -15,6 +15,9 @@
 * [Tutorials and example datasets](https://clickhouse.com/docs/getting-started/example-datasets)
 * [ClickPy - Analytics for PyPI packages](https://clickpy.clickhouse.com/)
 
+* [Choosing a Primary Key](https://clickhouse.com/docs/best-practices/choosing-a-primary-key)
+* [How to pick an ORDER BY / PRIMARY KEY / PARTITION BY for the MergeTree family table](https://kb.altinity.com/engines/mergetree-table-engine-family/pick-keys/)
+
 ClickHouse Cloud:
 
 * [ClickHouse Cloud Query API Endpoints](https://clickhouse.com/docs/cloud/get-started/query-endpoints)
