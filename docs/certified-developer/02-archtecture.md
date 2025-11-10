@@ -193,3 +193,127 @@ Summary:
 * part - a folder of files containing the column files and index files of a subset of table data
 
 ## Lab 2.1: Understanding Primary Keys in ClickHouse
+
+```sql
+SELECT * 
+FROM system.parts
+WHERE table = 'uk_prices_1'
+AND active = 1;
+-- 7 parts across 30 million rows, that is roughly 500 granules per part:
+-- 30033199/7/8192
+-- number of granules: 30033199/8192 ~ 3666
+
+SELECT
+    formatReadableSize(sum(data_compressed_bytes)) AS compressed_size,
+    formatReadableSize(sum(data_uncompressed_bytes)) AS uncompressed_size
+FROM system.parts
+WHERE table = 'uk_prices_1' AND active = 1;
+--    ┌─compressed_size─┬─uncompressed_size─┐
+-- 1. │ 1.17 GiB        │ 4.05 GiB          │
+--    └─────────────────┴───────────────────┘
+
+SELECT avg(toUInt32(price))
+FROM uk_prices_1
+WHERE town = 'LONDON';
+-- 1 row in set. Elapsed: 0.854 sec. Processed 30.03 million rows, 973.60 MB (35.17 million rows/s., 1.14 GB/s.)
+SHOW CREATE TABLE uk_prices_1
+-- PRIMARY KEY date
+EXPLAIN indexes=1 SELECT avg(toUInt32(price))
+FROM uk_prices_1
+WHERE town = 'LONDON';
+--     ┌─explain────────────────────────────────────────────────────────────────┐
+--  1. │ Expression ((Project names + Projection))                              │
+--  2. │   Aggregating                                                          │
+--  3. │     Expression (Before GROUP BY)                                       │
+--  4. │       Expression ((WHERE + Change column names to column identifiers)) │
+--  5. │         ReadFromMergeTree (default.uk_prices_1)                        │
+--  6. │         Indexes:                                                       │
+--  7. │           PrimaryKey                                                   │
+--  8. │             Condition: true                                            │
+--  9. │             Parts: 7/7                                                 │
+-- 10. │             Granules: 3665/3665                                        │
+-- 11. │             Ranges: 7                                                  │
+--     └────────────────────────────────────────────────────────────────────────┘
+EXPLAIN indexes=1 SELECT avg(toUInt32(price))
+FROM uk_prices_1
+WHERE date = '2025-01-01';
+--     ┌─explain────────────────────────────────────────────────────────────────┐
+--  1. │ Expression ((Project names + Projection))                              │
+--  2. │   Aggregating                                                          │
+--  3. │     Expression (Before GROUP BY)                                       │
+--  4. │       Expression ((WHERE + Change column names to column identifiers)) │
+--  5. │         ReadFromMergeTree (default.uk_prices_1)                        │
+--  6. │         Indexes:                                                       │
+--  7. │           PrimaryKey                                                   │
+--  8. │             Keys:                                                      │
+--  9. │               date                                                     │
+-- 10. │             Condition: (date in [1735689600, 1735689600])              │
+-- 11. │             Parts: 1/7                                                 │
+-- 12. │             Granules: 1/3665                                           │
+-- 13. │             Search Algorithm: binary search                            │
+-- 14. │             Ranges: 1                                                  │
+--     └────────────────────────────────────────────────────────────────────────┘
+
+
+SELECT avg(toUInt32(price))
+FROM uk_prices_1
+WHERE toYYYYMM(date) = '202207';
+-- 1 row in set. Elapsed: 0.008 sec. Processed 114.69 thousand rows, 2.06 MB (14.42 million rows/s., 259.46 MB/s.)
+
+CREATE TABLE uk_prices_2
+(
+    `id` Nullable(String),
+    `price` Nullable(String),
+    `date` DateTime,
+    `postcode` String,
+    `type` Nullable(String),
+    `is_new` Nullable(String),
+    `duration` Nullable(String),
+    `addr1` Nullable(String),
+    `addr2` Nullable(String),
+    `street` Nullable(String),
+    `locality` Nullable(String),
+    `town` Nullable(String),
+    `district` Nullable(String),
+    `county` Nullable(String),
+    `column15` Nullable(String),
+    `column16` Nullable(String)
+)
+ENGINE = MergeTree
+PRIMARY KEY (postcode, date);
+
+INSERT INTO uk_prices_2
+SELECT * from uk_prices_1;
+
+-- What is the most expensive property sold in uk_prices_2 where postcode equals 'LU1 5FT'? How many granules were processed to run this query?
+SELECT argMax(street, price)
+FROM uk_prices_2
+WHERE postcode = 'LU1 5FT'
+-- DUMFRIES STREET 
+-- 1 row in set. Elapsed: 0.006 sec. Processed 73.73 thousand rows, 3.54 MB (12.14 million rows/s., 583.30 MB/s.)
+
+-- What is the average price of all properties in uk_prices_2 sold in 2020 and after? How many granules were skipped in this query, considering that date is the second column in the primary key? Notice that adding date to the primary key did not help in skipping granules.
+SELECT avg(toUInt32(price))
+FROM uk_prices_2
+WHERE toYear(date) >= 2020
+-- 1 row in set. Elapsed: 0.080 sec. Processed 30.03 million rows, 562.02 MB (373.73 million rows/s., 6.99 GB/s.)
+-- Full table scan
+
+SELECT
+    formatReadableSize(sum(data_compressed_bytes)) AS compressed_size,
+    formatReadableSize(sum(data_uncompressed_bytes)) AS uncompressed_size,
+    100 - ((100 * sum(data_compressed_bytes)) / sum(data_uncompressed_bytes)) AS compression_rate
+FROM system.parts
+WHERE (`table` = 'uk_prices_2') AND (active = 1)
+--    ┌─compressed_size─┬─uncompressed_size─┬──compression_rate─┐
+-- 1. │ 747.59 MiB      │ 4.02 GiB          │ 81.85170578015085 │
+--    └─────────────────┴───────────────────┴───────────────────┘
+
+-- ANSWER: The postcode is a String, and sorting by a String column can greatly improve compression. We will see in a future module that you can do better though by storing these strings as numbers using LowCardinality when feasible.
+
+-- Your choice for the primary key in a MergeTree table may increase or decrease compression, thereby affecting disk space usage and query performance.
+
+-- A tables primary index must fit in memory
+
+-- Summary: You now have the UK property prices stored in two tables, each with a different primary key. As you saw in the lab, a good primary key can make all the difference in regards to how much data is read for a specific query.
+```
