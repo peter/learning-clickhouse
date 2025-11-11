@@ -17,6 +17,16 @@ Column type recommendations:
 
 There is a [clickhouse benchmark tool](https://clickhouse.com/docs/operations/utilities/clickhouse-benchmark) that you can use for performance testing.
 
+## Guideline for Query Response TImes for Dashboards
+
+From [Accelerating ClickHouse queries on JSON data for faster Bluesky insights](https://clickhouse.com/blog/accelerating-clickhouse-json-queries-for-fast-bluesky-dashboards):
+
+* <100ms (instant) — Feels instant, ideal for filtering or quick updates.
+* 100ms - 500ms (very fast) — Smooth, great for charts, tab switches, or summaries.
+* 500ms - 1s (noticeable delay) — Users notice the wait. Acceptable for complex queries.
+* 1s - 2s (slow but tolerable) — Feels sluggish. Use loading indicators.
+* >2s (too slow) — Feels unresponsive. Users lose focus.
+
 ## Resources
 
 * [ClickHouse Learning](https://learn.clickhouse.com)

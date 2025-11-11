@@ -5,6 +5,7 @@
 * [ClickHouse CLI](https://clickhouse.com/docs/interfaces/cli)
 * [ClickHouse on Wikipedia](https://en.wikipedia.org/wiki/ClickHouse)
 * [ClickHouse Documentation](https://clickhouse.com/docs)
+* [ClickHouse Reference (data types, table engines, functions etc.)](https://clickhouse.com/docs/sql-reference)
 * [ClickHouse Cloud](https://console.clickhouse.cloud)
 * [ClickHouse Certified Developer](https://clickhouse.com/learn/certification)
 * [Real-time analytics with ClickHouse (Training)](https://clickhouse.com/learn/real-time-analytics)
@@ -17,6 +18,8 @@
 
 * [Choosing a Primary Key](https://clickhouse.com/docs/best-practices/choosing-a-primary-key)
 * [How to pick an ORDER BY / PRIMARY KEY / PARTITION BY for the MergeTree family table](https://kb.altinity.com/engines/mergetree-table-engine-family/pick-keys/)
+* [The billion docs JSON Challenge](https://clickhouse.com/blog/json-bench-clickhouse-vs-mongodb-elasticsearch-duckdb-postgresql)
+* [Announcing the new ClickHouse SQL Playground](https://clickhouse.com/blog/announcing-the-new-sql-playground)
 
 ClickHouse Cloud:
 
