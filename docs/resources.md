@@ -17,6 +17,8 @@
 * [ClickPy - Analytics for PyPI packages](https://clickpy.clickhouse.com/)
 
 * [Choosing a Primary Key](https://clickhouse.com/docs/best-practices/choosing-a-primary-key)
+* [Choosing the Right Join Algorithm
+](https://clickhouse.com/blog/clickhouse-fully-supports-joins-how-to-choose-the-right-algorithm-part5)
 * [How to pick an ORDER BY / PRIMARY KEY / PARTITION BY for the MergeTree family table](https://kb.altinity.com/engines/mergetree-table-engine-family/pick-keys/)
 * [The billion docs JSON Challenge](https://clickhouse.com/blog/json-bench-clickhouse-vs-mongodb-elasticsearch-duckdb-postgresql)
 * [Announcing the new ClickHouse SQL Playground](https://clickhouse.com/blog/announcing-the-new-sql-playground)

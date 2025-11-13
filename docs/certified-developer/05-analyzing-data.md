@@ -374,9 +374,10 @@ SELECT toStartOfDay(date) as day,
        count()
 FROM uk_prices_3
 WHERE toYear(date) = 2020
+AND town = 'LIVERPOOL'
 GROUP BY day
 ORDER BY day
--- 366. │ 2020-12-31 00:00:00 │      93 │
+-- 278. │ 2020-12-31 00:00:00 │       6 │
 
 -- Write a query that returns the price of the most expensive property in each town divided by the price of the most expensive property in the entire dataset. Sort the results in descending order of the computed result.
 WITH max_price_total AS (select max(price) from uk_prices_3)
@@ -414,3 +415,54 @@ ORDER BY ratio DESC;
 ```
 
 ## Lab 5.2 Building a Dashboard
+
+Introduction:  In this lab, you will create a dashboard in ClickHouse Cloud using the UK property prices dataset.
+
+Name the dashboard UK Property Prices by clicking in the text field at the top of the dashboard where it currently has Untitled Dashboard.
+
+A New Table visualization appears by default. Remove it by clicking on the three dots in the top-right corner of the visualization and select Delete.
+
+Open a new, empty tab in the SQL Console and enter the following query:
+
+```sql
+SELECT 
+    toYear(date) AS year,
+    round(avg(price)) AS average
+FROM uk_prices_3
+WHERE year >= 2000
+GROUP BY year 
+ORDER BY year;
+```
+
+Save the query as Yearly average.
+
+Go back to the UK Property Prices dashboard and click the New visualization button. Select Bar Chart from the drop down menu:
+
+The new chart will appear in your dashboard. Select Yearly average from the Select a query drop down me
+
+Put Year on the x-axis and average on the y-axis. Your dashboard should look like the following:
+
+Let's add a visualization in a slightly different way. From your UK Property Prices dashboard, click the New visualisation button and select Table.
+
+From the Select a query drop down menu, select Create a new query. This allows you to add a visualisation without defining the query first.
+
+Copy-and-paste the following query into the Inline Editor:
+
+```sql
+SELECT
+    concat(addr1,' ',street) AS street,
+    town,
+    formatReadableQuantity(price) AS sale_price
+FROM uk_prices_3
+ORDER BY price DESC
+LIMIT 10;
+```
+
+Click the Play button to run the query, which shows the result of the query below the editor. This query returns the top 10 most expensive properties sold in the dataset.
+
+Click the Save icon (next to the Play icon) and name the query Top 10 Properties. Click Save.
+
+You can resize the table in the dashboard as desired, and your dashboard should now look similar to the following:
+
+* Yearly average bar chart
+* Top ten properties table
