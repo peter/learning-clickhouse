@@ -261,3 +261,46 @@ SELECT * FROM rates_monthly2
 ```
 
 ## Lab 7.2 CollapsingMergeTree
+
+```sql
+CREATE TABLE messages
+(
+    id UInt32,
+    day Date,
+    message String,
+    sign Int8
+)
+ENGINE = CollapsingMergeTree(sign)
+PRIMARY KEY (id);
+
+INSERT INTO messages VALUES
+    (1, '2024-07-04', 'Hello', 1),
+    (2, '2024-07-04', 'Hi', 1),
+    (3, '2024-07-04', 'Bounjour', 1);
+
+SELECT * FROM messages
+
+-- "Update" the row with id equal to 2, setting the day to '2024-07-05' and changing the message to "Goodbye".  
+INSERT INTO messages VALUES
+    (2, '2024-07-04', 'Hi', -1),
+    (2, '2024-07-04', 'Goodbye', 1),;
+
+-- "Delete" the row where id equals 3.
+INSERT INTO messages VALUES
+    (3, '2024-07-04', 'Bounjour', -1);
+
+SELECT * FROM messages
+
+SELECT * FROM messages FINAL
+--    ┌─id─┬────────day─┬─message─┬─sign─┐
+-- 1. │  1 │ 2024-07-04 │ Hello   │    1 │
+-- 2. │  2 │ 2024-07-04 │ Goodbye │    1 │
+--    └────┴────────────┴─────────┴──────┘
+
+INSERT INTO messages VALUES 
+   (1, '2024-07-03', 'Adios', 1);
+
+SELECT * FROM messages FINAL
+```
+
+Notice for row 1 you get the latest values. Why? The algorithm(opens in a new tab) used by CollapsingMergeTree is a best effort and tries to return the latest value in different situations. For example, when you have more state rows than cancel rows (this case), a FINAL query returns the last row inserted. That said, you should aim to insert a cancel row for every state row. From the documentation: "When there are at least 2 more “state” rows than “cancel” rows, or at least 2 more “cancel” rows then “state” rows, the merge continues, but ClickHouse treats this situation as a logical error and records it in the server log. This error can occur if the same data were inserted more than once."
