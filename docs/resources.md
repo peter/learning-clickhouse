@@ -30,8 +30,12 @@ ClickHouse Cloud:
 
 * [ClickHouse Table Engines](https://clickhouse.com/docs/engines/table-engines)
 * [MergeTree Table Engine Family](https://clickhouse.com/docs/engines/table-engines/mergetree-family/mergetree)
+* [SummingMergeTree](https://clickhouse.com/docs/engines/table-engines/mergetree-family/summingmergetree)
 * [ClickHouse Functions](https://clickhouse.com/docs/sql-reference/functions)
 * [Projections](https://clickhouse.com/docs/sql-reference/statements/alter/projection)
+* [Materialized Views (incremental/refreshable)](https://clickhouse.com/docs/materialized-views)
+
+* [ClickHouse on Thoughtworks 2025 Tech Radar](https://www.thoughtworks.com/radar/tools/summary/clickhouse)
 
 Altinity ClickHouse Training:
 

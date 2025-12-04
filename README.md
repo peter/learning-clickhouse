@@ -27,6 +27,7 @@ You can evaluate ClickHouse cloud for free during a 30 day trial period (with 30
 * [Hosting](docs/hosting.md)
 * [ClickHouse Certified Developer](docs/certified-developer.md)
 * [Query Optimization](docs/query-optimization.md)
+* [Projections](docs/projections.md)
 * [Query Formats](docs/query-formats.md)
 * [ClickHouse Functions](docs/functions.md)
 * [Table Partitions](docs/partitions.md)
