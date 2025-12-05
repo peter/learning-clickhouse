@@ -24,6 +24,12 @@ ClickHouse keeper is a coordination system designed specifically for ClickHouse 
 
 Database host: a running instance of clickhouse server. Running ClickHouse server on four hosts dons not automatically create a cluster. Replicas Need to live on different hosts.
 
+Purpose of replication in ClickHouse:
+
+* High Availability (HA) and Fault Tolerance (handling hardware failure etc.)
+* Scaling Read Throughput
+* Zero downtime maintenance
+
 ## Implementing Scaling
 
 MergeTree doesn't work for the scaling setup. Instead you can use `ReplicatedMergeTree` or another table engine with the `Replicated` name prefix.

@@ -34,6 +34,7 @@ ClickHouse Cloud:
 * [ClickHouse Functions](https://clickhouse.com/docs/sql-reference/functions)
 * [Projections](https://clickhouse.com/docs/sql-reference/statements/alter/projection)
 * [Materialized Views (incremental/refreshable)](https://clickhouse.com/docs/materialized-views)
+* [Compression Codecs](https://clickhouse.com/docs/data-compression/compression-in-clickhouse)
 
 * [ClickHouse on Thoughtworks 2025 Tech Radar](https://www.thoughtworks.com/radar/tools/summary/clickhouse)
 
