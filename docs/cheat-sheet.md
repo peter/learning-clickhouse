@@ -1,5 +1,26 @@
 # ClickHouse Cheat Sheet
 
+<!-- toc -->
+
+- [Showing Databases and Tables](#showing-databases-and-tables)
+- [Table Creation and Basic Queries](#table-creation-and-basic-queries)
+- [Primary Keys, Order By, and Granules](#primary-keys-order-by-and-granules)
+- [Data Types](#data-types)
+- [Data Parts](#data-parts)
+- [Explain](#explain)
+- [The System Database and Settings](#the-system-database-and-settings)
+- [Query Formats](#query-formats)
+- [Importing Data from S3](#importing-data-from-s3)
+- [ClickHouse Built-in Functions](#clickhouse-built-in-functions)
+- [User Defined Functions](#user-defined-functions)
+- [Query to see Compression Ratio of Table](#query-to-see-compression-ratio-of-table)
+- [Partitioning](#partitioning)
+- [Joins](#joins)
+- [Dictionaries](#dictionaries)
+- [Deleting and Updating Data](#deleting-and-updating-data)
+
+<!-- tocstop -->
+
 ## Showing Databases and Tables
 
 ```sql
