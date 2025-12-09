@@ -21,6 +21,7 @@ You can evaluate ClickHouse cloud for free during a 30 day trial period (with 30
 
 ## Table of Contents
 
+* [ClickHouse Cheat Sheet](docs/cheat-sheet.md)
 * [ClickHouse Certified Developer](docs/certified-developer.md)
 * [Hello World](docs/hello-world.md)
 * [Speed Demo](docs/speed-demo.md)

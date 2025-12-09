@@ -118,11 +118,11 @@ ORDER BY month DESC
 * avg
 * median
 * quantile/quantileExact - `quantile(0.9)(price)` (approximate)
-* corr
+* corr - correlation
 * topK - `topK(10)street` (10 most frequently occuring streets)
 
 ```sql
-DROP TABLE IF EXISTS series;
+DROP TABLE IF NOT EXISTS series;
 CREATE TABLE series
 (
     i UInt32,
@@ -138,7 +138,7 @@ FROM series;
 -- └────────────────────────┘
 ```
 
-There is an `If` aggregate function combinator that you can add as a function prefix to aggregate functions i.e.:
+There is an `If` aggregate function combinator that you can add as a function suffic to aggregate functions i.e.:
 
 * `sumIf`
 * `countIf`

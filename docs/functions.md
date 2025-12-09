@@ -55,4 +55,4 @@ FORMAT vertical;
 
 ## Date and Time Functions
 
-See [Date and Time Functions]( video.seenthis.se/v2/builds/abzoAGErrT/index.html)
+See [Date and Time Functions](https://clickhouse.com/docs/sql-reference/functions/date-time-functions)

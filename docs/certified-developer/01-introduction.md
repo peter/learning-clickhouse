@@ -52,7 +52,7 @@ show databases
 -- 4. │ system             │
 --    └────────────────────┘
 
-show table from default
+show tables from default
 -- no tables until you create some
 
 show tables from system
