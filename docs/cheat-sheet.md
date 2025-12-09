@@ -1,5 +1,7 @@
 # ClickHouse Cheat Sheet
 
+Most of this material has been drawn from the excellent course [Real-time analytics with ClickHouse](https://clickhouse.com/learn/real-time-analytics)
+
 <!-- toc -->
 
 - [Showing Databases and Tables](#showing-databases-and-tables)
@@ -18,6 +20,7 @@
 - [Joins](#joins)
 - [Dictionaries](#dictionaries)
 - [Deleting and Updating Data](#deleting-and-updating-data)
+- [Lab Solutions from Real-time analytics with ClickHouse Course](#lab-solutions-from-real-time-analytics-with-clickhouse-course)
 
 <!-- tocstop -->
 
@@ -594,3 +597,23 @@ DELETE FROM my_table WHERE y != 'hello'
 
 * The deleted rows are marked as deleted with a hidden column.
 * The deleted rows are eventually deleted when parts merge
+
+## Lab Solutions from Real-time analytics with ClickHouse Course
+
+* [Lab 1.2 - Create Table, S3 Import, Basic Queries](https://github.com/ClickHouse/clickhouse-academy/blob/main/realtime-analytics/01_introduction_to_clickhouse/lab_1.2.sql)
+* [Lab 2.1 - System Parts, Compression Ratio](https://github.com/ClickHouse/clickhouse-academy/blob/main/realtime-analytics/02_clickhouse_architecture/lab_2.1.sql)
+* [Lab 3.1](https://github.com/ClickHouse/clickhouse-academy/blob/main/realtime-analytics/03_inserting_data/lab_3.1.sql)
+* [Lab 3.2](https://github.com/ClickHouse/clickhouse-academy/blob/main/realtime-analytics/03_inserting_data/lab_3.2.sql)
+* [Lab 4.1 - Setup](https://github.com/ClickHouse/clickhouse-academy/blob/main/realtime-analytics/04_modeling_data/setup.sql)
+* [Lab 4.1](https://github.com/ClickHouse/clickhouse-academy/blob/main/realtime-analytics/04_modeling_data/lab_4.1.sql)
+* [Lab 5.1](https://github.com/ClickHouse/clickhouse-academy/blob/main/realtime-analytics/05_analyzing_data/lab_5.1.sql)
+* [Lab 6.1 - Joins](https://github.com/ClickHouse/clickhouse-academy/blob/main/realtime-analytics/06_joining_data/lab_6.1.sql)
+* [Lab 7.1 - ReplacingMergeTree](https://github.com/ClickHouse/clickhouse-academy/blob/main/realtime-analytics/07_deleting_and_updating_data/lab_7.1.sql)
+* [Lab 7.2 - CollapsingMergeTree](https://github.com/ClickHouse/clickhouse-academy/blob/main/realtime-analytics/07_deleting_and_updating_data/lab_7.2.sql)
+* [Lab 8.1 - Setup](https://github.com/ClickHouse/clickhouse-academy/blob/main/realtime-analytics/08-query-acceleration/setup.sql)
+* [Lab 8.1 - MATERIALIZED VIEW](https://github.com/ClickHouse/clickhouse-academy/blob/main/realtime-analytics/08-query-acceleration/lab_8.1.sql)
+* [Lab 8.2 - MATERIALIZED VIEW REFRESH](https://github.com/ClickHouse/clickhouse-academy/blob/main/realtime-analytics/08-query-acceleration/lab_8.2.sql)
+* [Lab 8.3 - MATERIALIZED VIEW SummingMergeTree](https://github.com/ClickHouse/clickhouse-academy/blob/main/realtime-analytics/08-query-acceleration/lab_8.3.sql)
+* [Lab 8.4 - MATERIALIZED VIEW AggregatingMergeTree](https://github.com/ClickHouse/clickhouse-academy/blob/main/realtime-analytics/08-query-acceleration/lab_8.4.sql)
+* [Lab 8.5 - ADD PROJECTION](https://github.com/ClickHouse/clickhouse-academy/blob/main/realtime-analytics/08-query-acceleration/lab_8.5.sql)
+* [Lab 8.6 - ADD INDEX bloom_filter](https://github.com/ClickHouse/clickhouse-academy/blob/main/realtime-analytics/08-query-acceleration/lab_8.6.sql)
