@@ -189,7 +189,7 @@ Summary:
 
 * granule - logical breakdown of rows in an uncompressed block, by default 8192 rows
 * primary key - sort order of table
-* priary index - in-memory index containing values in primary key pointing to first row of each granule
+* primary index - in-memory index containing values in primary key pointing to first row of each granule
 * part - a folder of files containing the column files and index files of a subset of table data
 
 ## Lab 2.1: Understanding Primary Keys in ClickHouse

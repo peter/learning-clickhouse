@@ -12,6 +12,8 @@ show create table my_table
 
 ## Table Creation and Basic Queries
 
+Every table needs to have an engine, see [ClickHouse Table Engines](https://clickhouse.com/docs/engines/table-engines) and [MergeTree family](https://clickhouse.com/docs/engines/table-engines/mergetree-family/mergetree).
+
 ```sql
 CREATE DATABASE uk;
 
@@ -56,6 +58,122 @@ ENGINE = Memory;
 INSERT INTO series(i, x_value, y_value) VALUES (1, 5.6, -4.4),(2, -9.6, 3),(3, -1.3, -4),(4, 5.3, 9.7),(5, 4.4, 0.037),(6, -8.6, -7.8),(7, 5.1, 9.3),(8, 7.9, -3.6),(9, -8.2, 0.62),(10, -3, 7.3);
 SELECT corr(x_value, y_value)
 FROM series;
+```
+
+## Primary Keys, Order By, and Granules
+
+The primary key determines the sort order and has nothing to do with uniqueness. For the most part `PRIMARY KEY` and `ORDER BY` are identical and they determine the sort order on disk.
+
+Every MergeTree table has a primary index which has a key per granule (8192 rows by default, i.e. it's a sparse index). You can have millions of rows but only hundreds of entries in the primary key.
+
+A granule is the smallest indivisible amount of data that ClickHouse reads when searching for data. When writing a query you want to avoid a full table scan and skip as many granules as possible. THe primary index contains the primary key for the first row of every granule.
+
+Once ClickHouse knows the granules that need to be searched it sends the granules to a thread for processing. Granules are processed concurrently. You can throttle the amount of compute resources (RAM and cores) that a query consumes but by default it will use as much as it needs to serve the query as fast as possible.
+
+Every column in the primary key comes at a cost in sorting and cost of inserts and merges. Unique / high cardinality columns should not be in the primary key.
+
+The PRIMARY KEY can be different from ORDER BY if it is a prefix of it (i.e. ORDER BY can extend the PRIMARY KEY). The primary key should be based on the queries you make. Only add a column there is you query by it frequently.
+
+The most important decision in a MergeTree table is the primary key and has a huge effect on performance. Lower cardinality columns should come first in the primary key.
+
+If you query by date then put that in the primary key. If you query by town then make town the primary key. What do you do if you filter by date and town? Then use town and date and put town first as there are fewer towns than dates. You cannot change primary key and you can only have one primary key.
+
+Sometimes you will wish you had multiple primary keys and there are multiple solutions available:
+
+* Create two tables for the same data
+* Use a projection
+* Use a materialized view
+* Define a [skipping index](https://clickhouse.com/docs/optimize/skipping-indexes)
+
+```sql
+CREATE TABLE my_table
+(
+    column1 FixedString(1),
+    column2 UInt32,
+    column3 String
+)
+ENGINE = MergeTree
+PRIMARY KEY (column1, column2)
+
+SELECT * 
+FROM system.parts
+WHERE table = 'uk_prices_1'
+AND active = 1;
+-- 7 parts across 30 million rows, that is roughly 500 granules per part:
+-- 30033199/7/8192
+-- number of granules: 30033199/8192 ~ 3666
+
+SELECT
+    formatReadableSize(sum(data_compressed_bytes)) AS compressed_size,
+    formatReadableSize(sum(data_uncompressed_bytes)) AS uncompressed_size
+FROM system.parts
+WHERE table = 'uk_prices_1' AND active = 1;
+--    ┌─compressed_size─┬─uncompressed_size─┐
+-- 1. │ 1.17 GiB        │ 4.05 GiB          │
+--    └─────────────────┴───────────────────┘
+```
+
+## Data Types
+
+ClickHouse has its own data types. The ANSI SQL standard data types are represented as aliases in ClickHouse.
+
+* UInt8, UInt16, UInt32, UInt64, UInt256
+* Int8, Int16, Int32, Int64, Int256
+* Float32, Float64, Decimal
+* String, FixedString(N)
+* Date, Date32, DateTime, DateTime64
+* Nullable(typename)
+* JSON, LowCardinality, Array, UUID, Geo, Map etc.
+
+Where are VARCHAR, INT, and FLOAT? They are aliases to ClickHouse data types.
+
+```sql
+-- There are 138 data types in total but more than half are aliases
+SELECT *
+FROM system.data_type_families
+WHERE alias_to = 'String';
+-- VARCHAR -> String
+-- FLOAT -> Float32
+-- INT -> Int32
+```
+
+The selection of data types is very important in ClickHouse as it affects storage and performance. Even small optimizations add up across billions of rows.
+
+Data Types from [ClickHouse Data Types Reference Docs](https://clickhouse.com/docs/sql-reference/data-types):
+
+* [Int/UInt](https://clickhouse.com/docs/sql-reference/data-types/int-uint) - fixed-length integers
+* [Float32/Float64](https://clickhouse.com/docs/sql-reference/data-types/float) - float and double. For accurate calculations in finance etc. - use Decimal instead
+* [Decimal](https://clickhouse.com/docs/sql-reference/data-types/decimal). Signed fixed-point numbers that keep precision during add, subtract and multiply operations. Precision is number of decimal digits and the default is `Decimal(10, 0)`
+* [String](https://clickhouse.com/docs/sql-reference/data-types/string) - Strings of an arbitrary length. The length is not limited. The value can contain an arbitrary set of bytes, including null bytes. The String type replaces the types VARCHAR, BLOB, CLOB, and others from other DBMSs
+* [FixedString(N)](https://clickhouse.com/docs/sql-reference/data-types/fixedstring) - fixed length string
+* [DateTime](https://clickhouse.com/docs/sql-reference/data-types/datetime) - calendar time with second precision
+* [DateTime64](https://clickhouse.com/docs/sql-reference/data-types/datetime64) - precise calendar time with typical precision 3 (milliseconds), 6 (microseconds), 9 (nanoseconds).
+* [Enum](https://clickhouse.com/docs/sql-reference/data-types/enum) - example: `Enum('hello' = 1, 'world' = 2)`
+* [LowCardinality(T)](https://clickhouse.com/docs/sql-reference/data-types/lowcardinality) - dictionary encoding that stores integers for when you have few unique values (less than 10 thousand unique values). The advantage of Enum is that it's easier to add new values i.e. you don't need to know all the unique values at table creation time. Storing billions of numbers rather than billions of strings can have a huge impact on performance. You can count unique values with the `uniq` function
+* [Nullable(T)](https://clickhouse.com/docs/sql-reference/data-types/nullable) - allows column to have null values. Nullable columns can not be part of the primary key. ClickHouse will store 0 for Nullable(UInt64) and needs to store an extra column to keep track of the null value and there is a cost associated with that. NOTE: null values are omitted from calculations, i.e. if you calculate an average (`avg(my_column)`) then null values are not counted towards the average but zero values are. Note that you use a default value instead of Nullable, i.e. `metric Int64 DEFAULT -1` and then do `SELECT avg(metric) FROM my_table WHERE metric > -1`.
+* [JSON](https://clickhouse.com/docs/sql-reference/data-types/newjson) - any nested JSON data, doesn't need to adhere to a fixed schema, i.e. `CREATE TABLE my_json_table (raw JSON) ENGINE = MergeTree ORDER BY tuple()` and `SELECT raw.a.b from my_json_table`. The JSON query performance is really good, see [The billion docs JSON Challenge](https://clickhouse.com/blog/json-bench-clickhouse-vs-mongodb-elasticsearch-duckdb-postgresql) and [Accelerating ClickHouse queries on JSON data for faster Bluesky insights](https://clickhouse.com/blog/accelerating-clickhouse-json-queries-for-fast-bluesky-dashboards)
+* [Array(T)](https://clickhouse.com/docs/sql-reference/data-types/array)
+
+## Data Parts
+
+Every time you do an insert in ClickHouse the data becomes a "part" in ClickHouse. Inserts should be peformed in batches (where each batch is thousands or millions of rows). A part is an immutable folder with column and metadata files. For more efficient small inserts you can enable [async inserts](https://clickhouse.com/docs/optimize/asynchronous-inserts) so small inserts are batched
+
+Each column in a part is stored in its own immutable file.
+
+```sql
+select *
+from system.parts
+where table = 'uk_price_paid'
+format vertical;
+```
+
+## Explain
+
+```sql
+EXPLAIN indexes=1 SELECT avg(price)
+from uk.uk_price_paid
+WHERE postcode1 = 'AL1'
+AND   postcode2 = '1AJ'
 ```
 
 ## The System Database and Settings
@@ -164,6 +282,18 @@ FROM url(
     d String,
     e String'
 ) SETTINGS max_http_get_redirects=10;
+
+--------------------------------------------------------
+-- CSV formats and schema_inference_hints
+--------------------------------------------------------
+
+SELECT
+    formatReadableQuantity(sum(approved_amount)),
+    formatReadableQuantity(sum(recommended_amount))
+FROM s3('https://learn-clickhouse.s3.us-east-2.amazonaws.com/operating_budget.csv')
+SETTINGS
+format_csv_delimiter='~',
+schema_inference_hints='approved_amount UInt32, recommended_amount UInt32';
 ```
 
 ## ClickHouse Built-in Functions
@@ -244,6 +374,15 @@ FORMAT VERTICAL;
 -- date_diff:           7
 ```
 
+`argMax` example:
+
+```sql
+-- What is the most expensive property sold in uk_prices_2 where postcode equals 'LU1 5FT'?
+SELECT argMax(street, price)
+FROM uk_prices_2
+WHERE postcode = 'LU1 5FT'
+```
+
 Example usage for a few math aggregate functions:
 
 ```sql
@@ -272,6 +411,28 @@ FROM id_x
 FORMAT vertical;
 ```
 
+## User Defined Functions
+
+[User Defined Functions Docs](https://clickhouse.com/docs/sql-reference/statements/create/function)
+
+SQL User Defined Functions:
+
+```sql
+SELECT count() FROM system.functions
+-- 1720
+CREATE FUNCTION mergePostcode AS (p1, p2) -> concat(p1, p2)
+SELECT count() FROM system.functions
+-- 1721
+
+SELECT mergePostcode(postcode1, postcode2) as postcode,
+       count()
+FROM uk_prices_3
+WHERE postcode1 != '' AND postcode2 != ''
+GROUP BY postcode
+ORDER BY count() DESC
+LIMIT 100;
+```
+
 ## Query to see Compression Ratio of Table
 
 ```sql
@@ -286,3 +447,129 @@ WHERE name = 'uk_price_paid';
 --    └──────────────────────────┴──────────────────────────┴───────────────────┘
 -- Compare to 4 GB CSV size
 ```
+
+## Partitioning
+
+You have to be careful that you don't get too many parts in a table. If you have more than 10 thousand parts in ClickHouse Cloud it will stop working. A partition is a part. You should avoid partitioning on high cardinality columns. Without partitioning all the parts of a table may merge into a single part. Merging only happens per partition. The recommendation is to partition by month. You can easily drop single partitions, i.e. `ALTER TABLE DROP PARTITION '2024-01'` and this is the typical use case for partitioning, being able to delete old data.
+
+## Joins
+
+All standards joins are supported
+
+```sql
+SELECT n.name,
+       g.genre
+FROM movies as m
+INNER JOIN genres g on m.id = g.movie_id
+```
+
+What if my table has billions of rows? ClickHouse has six different join algorithms:
+
+* direct - not memory bound, right hand table is dictionary in memory
+* hash - memory bound, in memory hash table of right hand table
+* parallel hash - memory bound, similar to hash but splits right table
+* grace hash - similar to hash but does not need to fit in memory
+* full sorting merge - classic sort merge join
+* partial merge - similar to sort merge but minimizes memory usage
+
+Joining billions of rows with billions of rows will require lots of resources regardless of which system you are using
+
+There is a trade-off between memory usage of the join and execution time
+
+```sql
+SELECT *
+FROM actors a
+JOIN roles r on a.id = r.actor_id
+-- Default join_algorithm is 'direct'
+SETTINGS join_algorithm = 'grace_hash'
+```
+
+The `hash` and `parallel_hash` algorithms are fast but use a lot of memory whereas `grace_hash` and `partial_merge` are slower but use less memory
+
+## Dictionaries
+
+[Dictionaries](https://clickhouse.com/docs/sql-reference/dictionaries) are in memory key-value mappings, stored on every replica
+
+```sql
+CREATE DICTIONARY uk_populations (
+    city String,
+    population UInt32
+)
+PRIMARY KEY city
+SOURCE(
+    HTTP(
+        url 'https://...',
+        format 'TabSeparatedWithNames'
+    )
+)
+LAYOUT(HASHED())
+LIFETIME(86400) -- update interval in seconds
+```
+
+Dictionary functions:
+
+* dictGet()
+* dictGet<dataType>()
+* dictHas
+
+```sql
+CREATE TABLE uk_mortgage_rates_table (
+    date DateTime64,
+    variable Decimal32(2),
+    fixed Decimal32(2),
+    bank Decimal32(2)
+)
+ENGINE = MergeTree()
+PRIMARY KEY date;
+
+INSERT INTO uk_mortgage_rates_table
+select *
+from s3('https://learnclickhouse.s3.us-east-2.amazonaws.com/datasets/mortgage_rates.csv')
+
+CREATE DICTIONARY uk_mortgage_rates
+(
+    date Date,
+    variable Decimal32(2),
+    fixed Decimal32(2),
+    bank Decimal32(2)
+)
+PRIMARY KEY date
+SOURCE(CLICKHOUSE(TABLE 'uk_mortgage_rates_table'))
+-- SOURCE(HTTP(
+--     url 'https://learnclickhouse.s3.us-east-2.amazonaws.com/datasets/mortgage_rates.csv'
+--     format 'CSV'
+-- ))
+LAYOUT(COMPLEX_KEY_HASHED())
+LIFETIME(2628000000)
+
+-- Check the rows in your dictionary to see if it worked. You should see 220 rows.
+select * from uk_mortgage_rates
+select count(*) from uk_mortgage_rates
+```
+
+## Deleting and Updating Data
+
+Parts in ClickHouse are immutable files. Lets say you have 25 columns and 1 billion rows and you want to delete a row. This is very difficult for ClickHouse. You can do deletes and updates though but it won't happen immediately, instead a mutation is created and it will complete eventually.
+
+```sql
+ALTER TABLE random DELETE WHERE y != 'hello';
+ALTER TABLE random UPDATE y = 'hello' WHERE x > 10;
+```
+
+```sql
+SELECT * FROM system.mutations
+```
+
+* Mutations execute in order
+* Data inserted after is not mutated
+* If the mutation gets stuck you can kill it
+* Clients can wait by setting mutation_sync = 1 or 2 (default is 0)
+
+Lightweight deletes:
+
+```sql
+DELETE FROM my_table WHERE y != 'hello'
+```
+
+* The deleted rows are marked as deleted with a hidden column.
+* The deleted rows are eventually deleted when parts merge

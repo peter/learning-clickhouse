@@ -200,6 +200,8 @@ The [arrayJoin](https://clickhouse.com/docs/sql-reference/functions/array-join) 
 
 ## User Defined Functions
 
+[User Defined Functions Docs](https://clickhouse.com/docs/sql-reference/statements/create/function)
+
 SQL User Defined Functions:
 
 ```sql
