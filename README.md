@@ -16,4 +16,5 @@ A collection of resources for learning about ClickHouse.
 * [Query Formats](docs/query-formats.md)
 * [ClickHouse Functions](docs/functions.md)
 * [Table Partitions](docs/partitions.md)
+* [Query Log](docs/query-log.md)
 * [Resources](docs/resources.md)

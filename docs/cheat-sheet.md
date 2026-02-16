@@ -1,6 +1,6 @@
 # ClickHouse Cheat Sheet
 
-Most of this material has been drawn from the excellent course [Real-time analytics with ClickHouse](https://clickhouse.com/learn/real-time-analytics)
+Most of this material has been drawn from the course [Real-time analytics with ClickHouse](https://clickhouse.com/learn/real-time-analytics)
 
 <!-- toc -->
 
