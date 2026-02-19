@@ -28,10 +28,47 @@ Most of this material has been drawn from the course [Real-time analytics with C
 
 ```sql
 show databases
-use default
+
+create database test_db
+
+use test_db
+
 show tables
-show create table my_table
-show create table my_table
+
+-- NOTE: by default columns in ClickHouse have a "NOT NULL" constraint (i.e. this is the opposite of an OLTP database).
+-- Use Nullable(type) to allow null for a column
+CREATE TABLE time_series_data
+(
+    timestamp DateTime,
+    key LowCardinality(String),
+    comment Nullable(String),
+    value Float64
+)
+ENGINE = MergeTree
+-- For time-range queries, put the lower cardinality columns first, timestamp last:
+PARTITION BY toYYYYMM(timestamp)
+ORDER BY (key, timestamp);
+
+show create table time_series_data
+
+INSERT INTO time_series_data (timestamp, key, comment, value) VALUES
+('2025-01-15 10:00:00', 'cpu_usage', 'peak load', 95.5),
+('2025-01-15 10:00:00', 'memory_usage', NULL, 72.3),
+('2025-01-15 11:00:00', 'cpu_usage', NULL, 45.2),
+('2025-02-10 09:00:00', 'cpu_usage', 'morning baseline', 30.1);
+
+select toStartOfDay(timestamp) as day,
+       key,
+       avg(value) as avg_value
+from time_series_data
+group by day, key
+order by day, key
+limit 1000;
+--    ┌─────────────────day─┬─key──────────┬─avg_value─┐
+-- 1. │ 2025-01-15 00:00:00 │ cpu_usage    │     70.35 │
+-- 2. │ 2025-01-15 00:00:00 │ memory_usage │      72.3 │
+-- 3. │ 2025-02-10 00:00:00 │ cpu_usage    │      30.1 │
+--    └─────────────────────┴──────────────┴───────────┘
 ```
 
 ## Table Creation and Basic Queries
@@ -597,6 +634,70 @@ DELETE FROM my_table WHERE y != 'hello'
 
 * The deleted rows are marked as deleted with a hidden column.
 * The deleted rows are eventually deleted when parts merge
+
+## Exporting Data from BigQuery to ClickHouse via Cloud Storage
+
+Exporting/importing a full table:
+
+```sql
+-- BigQuery export
+EXPORT DATA OPTIONS (
+  uri = 'gs://my-bigquery-exports-bucket/my_table/*.parquet',
+  format = 'PARQUET',
+  overwrite = TRUE
+) AS
+SELECT *
+FROM `my_dataset.my_table`;
+
+-- ClickHouse import
+TRUNCATE TABLE my_table
+INSERT INTO my_table
+SELECT * FROM s3(
+  'https://storage.googleapis.com/my-bigquery-exports-bucket/my_table/*.parquet',
+  '{{ var.value.CLICKHOUSE_HMAC_ACCESS_ID }}',
+  '{{ var.value.CLICKHOUSE_HMAC_ACCESS_SECRET }}',
+  'Parquet'
+)
+```
+
+NOTE: the `TRUNCATE` above creates a short time gap when there is no data. To avoid this you can use a shadow table and the `EXCHANGE TABLES` command which is atomic:
+
+```sql
+CREATE TABLE my_table_shadow AS my_table
+INSERT INTO my_table_shadow SELECT ...
+EXCHANGE TABLES my_table AND my_table_shadow
+DROP TABLE my_table_shadow
+```
+
+You can also replace a partition from a shadow table if your table is partitioned by day:
+
+```sql
+ALTER TABLE my_table REPLACE PARTITION '202502' FROM my_table_shadow;
+```
+
+Exporting/importing a date partitioned table:
+
+```sql
+-- BigQuery export
+EXPORT DATA OPTIONS (
+  uri = 'gs://my-bigquery-exports-bucket/my_table/{{ date_partition }}/*.parquet',
+  format = 'PARQUET',
+  overwrite = TRUE
+) AS
+SELECT *
+FROM `my_dataset.my_table`
+WHERE date = '{{ date_partition }}';
+
+-- ClickHouse import
+DELETE FROM my_table WHERE date = '{{ date_partition }}';
+INSERT INTO my_table
+SELECT * FROM s3(
+  'https://storage.googleapis.com/my-bigquery-exports-bucket/my_table/{{ date_partition }}/*.parquet',
+  '{{ var.value.CLICKHOUSE_HMAC_ACCESS_ID }}',
+  '{{ var.value.CLICKHOUSE_HMAC_ACCESS_SECRET }}',
+  'Parquet'
+)
+```
 
 ## Lab Solutions from Real-time analytics with ClickHouse Course
 
