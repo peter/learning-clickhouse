@@ -65,7 +65,7 @@ ENGINE = MergeTree
 PRIMARY KEY (column1, column2)
 ```
 
-Every time you do an insert in ClickHouse the data becomes a "part" in ClickHouse. Inserts should be peformed in batches (where each batch is thousands or millions of rows).
+Every time you do an insert in ClickHouse the data becomes a "part" in ClickHouse. Inserts should be performed in batches (where each batch is thousands or millions of rows).
 
 ```sql
 INSERT INTO my_table VALUES

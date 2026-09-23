@@ -34,6 +34,7 @@ create database test_db
 use test_db
 
 show tables
+show tables FROM system
 
 -- NOTE: by default columns in ClickHouse have a "NOT NULL" constraint (i.e. this is the opposite of an OLTP database).
 -- Use Nullable(type) to allow null for a column
@@ -44,9 +45,11 @@ CREATE TABLE time_series_data
     comment Nullable(String),
     value Float64
 )
+-- Every table needs to have an engine and MergeTree is the standard one
 ENGINE = MergeTree
--- For time-range queries, put the lower cardinality columns first, timestamp last:
 PARTITION BY toYYYYMM(timestamp)
+-- This is the sort key. By default the PRIMARY KEY is the same but if it's different it needs to be a subset/prefix of the ORDER BY
+-- For time-range queries, put the lower cardinality columns first, timestamp last:
 ORDER BY (key, timestamp);
 
 show create table time_series_data
@@ -260,6 +263,12 @@ select * from system.settings order by name format vertical
 --------------------------------------------------------
 -- Querying S3 or GCS files
 --------------------------------------------------------
+
+SELECT * 
+FROM s3('https://learn-clickhouse.s3.us-east-2.amazonaws.com/uk_property_prices/uk_prices.csv.zst')
+LIMIT 1000;
+
+DESC s3('https://learn-clickhouse.s3.us-east-2.amazonaws.com/uk_property_prices/uk_prices.csv.zst');
 
 select PROJECT,
        count()
@@ -635,7 +644,7 @@ DELETE FROM my_table WHERE y != 'hello'
 * The deleted rows are marked as deleted with a hidden column.
 * The deleted rows are eventually deleted when parts merge
 
-## Exporting Data from BigQuery to ClickHouse via Cloud Storage
+## Exporting Data from BigQuery / Redshift to ClickHouse via S3 / Cloud Storage
 
 Exporting/importing a full table:
 
@@ -687,6 +696,13 @@ EXPORT DATA OPTIONS (
 SELECT *
 FROM `my_dataset.my_table`
 WHERE date = '{{ date_partition }}';
+
+-- Redshift export
+UNLOAD ('SELECT * FROM my_table WHERE hour = ''{{ hour_partition }}''')
+TO 's3://my-redshift-export/my_table/{{ hour_partition }}/'
+IAM_ROLE 'arn:aws:iam::635987599627:role/myRedshiftRole'
+FORMAT PARQUET
+ALLOWOVERWRITE
 
 -- ClickHouse import
 DELETE FROM my_table WHERE date = '{{ date_partition }}';

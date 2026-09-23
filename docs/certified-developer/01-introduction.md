@@ -261,6 +261,29 @@ SHOW CREATE TABLE uk_prices_temp;
 ```
 
 ```sql
+SELECT *
+FROM s3('https://learn-clickhouse.s3.us-east-2.amazonaws.com/uk_property_prices/uk_prices.csv.zst')
+limit 100
+format vertical;
+-- Row 1:
+-- ──────
+-- id:       {5BBE9CB3-6332-4EB0-9CD3-8737CEA4A65A}
+-- price:    42000
+-- date:     1995-12-21 00:00:00
+-- postcode: NE4 9DN
+-- type:     S
+-- is_new:   N
+-- duration: F
+-- addr1:    8
+-- addr2:    
+-- street:   MATFEN PLACE
+-- locality: FENHAM
+-- town:     NEWCASTLE UPON TYNE
+-- district: NEWCASTLE UPON TYNE
+-- county:   TYNE AND WEAR
+-- column15: A
+-- column16: A
+
 CREATE TABLE uk_prices_1
 (
     `id` Nullable(String),
@@ -286,20 +309,26 @@ PRIMARY KEY date;
 INSERT INTO uk_prices_1
     SELECT * 
     FROM s3('https://learn-clickhouse.s3.us-east-2.amazonaws.com/uk_property_prices/uk_prices.csv.zst');
+-- 0 rows in set. Elapsed: 50.780 sec. Processed 30.03 million rows, 1.60 GB (591.44 thousand rows/s., 31.57 MB/s.)
 
 select count(*) from uk_prices_1;
 -- 30,033,199
 
 SELECT avg(toUInt32(price))
 FROM uk_prices_1;
+-- 1 row in set. Elapsed: 0.277 sec. Processed 30.03 million rows, 441.89 MB (108.43 million rows/s., 1.60 GB/s.)
 
 SELECT avg(toUInt32(price))
 FROM uk_prices_1
 WHERE toYear(date) >= '2020';
+-- 1 row in set. Elapsed: 0.057 sec. Processed 4.84 million rows, 91.77 MB (84.91 million rows/s., 1.61 GB/s.)
 
 SELECT avg(toUInt32(price))
 FROM uk_prices_1
 WHERE town = 'LONDON';
+-- 1 row in set. Elapsed: 0.360 sec. Processed 30.03 million rows, 973.60 MB (83.38 million rows/s., 2.70 GB/s.)
+
+select distinct toYear(date) as year from uk_prices_1 order by year limit 100
 ```
 
 A .zst file is a file compressed using Zstandard (also called zstd), a fast compression algorithm developed by Facebook/Meta. You can install it on Mac with `brew install zstd` and use it with `zstd -d file.zst`
