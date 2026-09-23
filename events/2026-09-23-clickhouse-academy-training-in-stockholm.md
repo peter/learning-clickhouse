@@ -4,6 +4,10 @@ A ClickHouse Academy training course
 
 2026-09-23 Stockholm
 
+Materials and labs:
+
+https://learn.clickhouse.com/real-time-analytics-with-clickhouse
+
 ## Companies and People
 
 - Mentimeter
@@ -12,12 +16,103 @@ A ClickHouse Academy training course
 - Auctionet
 - Hemnet
 
-## Notes
+## Labs
+
+- [Lab 1.2: Define and Populate a Table](https://learn.clickhouse.com/real-time-analytics-with-clickhouse/550417)
+- [Lab 2.1: Understanding Primary Keys in ClickHouse](https://learn.clickhouse.com/real-time-analytics-with-clickhouse/550429)
 
 ## LibreChat
 
 LibreChat was acquired by ClickHouse and is integrated in ClickHouse cloud.
 LibreChat can connect to different LLM models and uses MCP to connect to ClickHouse.
+
+## Lab 1.2: Define and Populate a Table
+
+```sql
+-- View the inferred schema using DESC
+-- 1.3 GB file
+DESC s3('https://learn-clickhouse.s3.us-east-2.amazonaws.com/uk_property_prices/uk_prices.csv.zst');
+
+CREATE OR REPLACE TABLE uk_prices_temp
+ENGINE = Memory
+AS
+    SELECT *
+    FROM s3('https://learn-clickhouse.s3.us-east-2.amazonaws.com/uk_property_prices/uk_prices.csv.zst')
+    LIMIT 100;
+
+CREATE TABLE uk_prices_1
+(
+    `id` Nullable(String),
+    `price` Nullable(String),
+    `date` DateTime,
+    `postcode` Nullable(String),
+    `type` Nullable(String),
+    `is_new` Nullable(String),
+    `duration` Nullable(String),
+    `addr1` Nullable(String),
+    `addr2` Nullable(String),
+    `street` Nullable(String),
+    `locality` Nullable(String),
+    `town` Nullable(String),
+    `district` Nullable(String),
+    `county` Nullable(String),
+    `column15` Nullable(String),
+    `column16` Nullable(String)
+)
+ENGINE = MergeTree
+PRIMARY KEY date;
+
+SELECT * FROM s3('https://learn-clickhouse.s3.us-east-2.amazonaws.com/uk_property_prices/uk_prices.csv.zst')
+LIMIT 5
+SETTINGS date_time_input_format = 'best_effort'
+
+INSERT INTO uk_prices_1
+SELECT * FROM s3('https://learn-clickhouse.s3.us-east-2.amazonaws.com/uk_property_prices/uk_prices.csv.zst')
+SETTINGS date_time_input_format = 'best_effort'
+
+select count() from uk_prices_1
+-- 1. │ 30033199 │ -- 30.03 million
+
+SELECT avg(toUInt32(price))
+FROM uk_prices_1;
+
+SELECT avg(toUInt32(price))
+FROM uk_prices_1
+WHERE toYear(date) >= '2020';
+
+SELECT avg(toUInt32(price))
+FROM uk_prices_1
+WHERE town = 'LONDON';
+```
+
+## Lab 2.1: Understanding Primary Keys in ClickHouse
+
+```sql
+SELECT *
+FROM system.parts
+WHERE table = 'uk_prices_1'
+AND active = 1;
+
+SELECT
+    formatReadableSize(sum(data_compressed_bytes)) AS compressed_size,
+    formatReadableSize(sum(data_uncompressed_bytes)) AS uncompressed_size
+FROM system.parts
+WHERE table = 'uk_prices_1' AND active = 1;
+
+SELECT avg(toUInt32(price))
+FROM uk_prices_1
+WHERE town = 'LONDON';
+
+SELECT avg(toUInt32(price))
+FROM uk_prices_1
+WHERE toYYYYMM(date) = '202207';
+
+SELECT
+    formatReadableSize(sum(data_compressed_bytes)) AS compressed_size,
+    formatReadableSize(sum(data_uncompressed_bytes)) AS uncompressed_size
+FROM system.parts
+WHERE table = 'uk_prices_2' AND active = 1;
+```
 
 ## Langfuse
 
@@ -195,6 +290,8 @@ from system.parts
 group by table
 ```
 
+The maximum size of a part is 150 GB.
+
 ## Part merges and Bulk / Batch Inserts and Async Insert Mode
 
 Every insert to clickhouse creates a part and that part is immutable.
@@ -208,6 +305,8 @@ A very high ingest throughput traditionally requires appropriate client-side dat
 https://clickhouse.com/blog/asynchronous-data-inserts-in-clickhouse
 
 Starting with ClickHouse `26.3` async inserts is the default
+
+The main benefit of async inserts (large inserts) is less resource usage in the ClickHosue cluster.
 
 ## wait_for_async_insert (fire and forget or wait for disk write)
 
@@ -295,3 +394,4 @@ Released every month with a version like `26.4`.
 - [Table Engines](https://clickhouse.com/docs/reference/engines/table-engines)
 - [A practical introduction to primary indexes in ClickHouse](https://clickhouse.com/docs/guides/clickhouse/data-modelling/sparse-primary-indexes)
 - [Glossary](https://clickhouse.com/docs/concepts/core-concepts/glossary)
+- [ClickStack OpenTelemetry collector](https://clickhouse.com/docs/clickstack/ingesting-data/collector)
